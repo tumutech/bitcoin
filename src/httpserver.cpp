@@ -1173,6 +1173,10 @@ bool HTTPRemoteClient::MaybeDisconnect(std::chrono::time_point<SteadyClock> now,
     const bool is_idle{rpcservertimeout.count() > 0 &&
                        now - m_idle_since.load() > rpcservertimeout &&
                        !m_req_busy};
+    
+    // For a half close, client has just stopped sending but can still read
+    // so keep the connection untill reply is sent
+    if (m_disconnect && (m_req_busy || ReadyToSend())) return false;
 
     // Disconnect this client due to error, end of communication, or idle timeout.
     // May drop unsent data if we are closing due to error.
